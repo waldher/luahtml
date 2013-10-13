@@ -27,10 +27,10 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
-
+#define LUAHTML_MODE_FILE 0
+#define LUAHTML_MODE_STRING 1
 #define INITIAL_SIZE 1024
 
 void luaHtml_call(lua_State *, char *);
 void appendToResult(char **, char *, int *, int *);
 void appendCharToResult(char **, char, int *, int *);
-

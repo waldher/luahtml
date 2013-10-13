@@ -23,7 +23,7 @@
 
 #include "luahtml.h"
 
-void luaHtml_call(lua_State *L, char *fileName){
+void luaHtml_call(lua_State *L, char *fileName, int mode = 0){
 	int state = 0; // 0 = No State  1 = Inside a scriptlet  2 = Inside a print scriptlet
 	int charState = 0; // 0 = No State  1 = <  2 = <%  3 = <%=  4 = %  5 = %>
 	int line = 1;
@@ -31,12 +31,27 @@ void luaHtml_call(lua_State *L, char *fileName){
 
 	int sizeAlloced = INITIAL_SIZE;
 	int length = 0;
-	char *result = malloc(INITIAL_SIZE); //Grow this using geometric progression
-	
 	FILE *fp;
 
-	fp = fopen(fileName, "r");
 
+	char *result = malloc(INITIAL_SIZE); //Grow this using geometric progression
+
+
+
+
+
+	switch(mode) {
+	case LUAHTML_MODE_FILE:
+
+		fp = fopen(fileName, "r");
+	
+
+		break;
+	case LUAHTML_MODE_STRING:
+		fp = open_memstream(fileName, sizeof(fileName));
+
+		break;
+	}
 	if(!fp){
 		return;
 	}
