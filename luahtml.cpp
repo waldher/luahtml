@@ -20,10 +20,10 @@
 * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
-
+#include <string.h>
 #include "luahtml.h"
 
-void luaHtml_call(lua_State *L, char *fileName){
+void luaHtml_call(lua_State *L, char *fileName, int mode){
 	int state = 0; // 0 = No State  1 = Inside a scriptlet  2 = Inside a print scriptlet
 	int charState = 0; // 0 = No State  1 = <  2 = <%  3 = <%=  4 = %  5 = %>
 	int line = 1;
@@ -31,17 +31,33 @@ void luaHtml_call(lua_State *L, char *fileName){
 
 	int sizeAlloced = INITIAL_SIZE;
 	int length = 0;
-	char *result = malloc(INITIAL_SIZE); //Grow this using geometric progression
-	
 	FILE *fp;
 
-	fp = fopen(fileName, "r");
 
+	char *result = (char *)malloc(INITIAL_SIZE); //Grow this using geometric progression
+
+
+
+
+
+	switch(mode) {
+	case LUAHTML_MODE_FILE:
+
+		fp = fopen(fileName, "r");
+	
+
+		break;
+	case LUAHTML_MODE_STRING: {
+		fp = fmemopen(fileName, strlen(fileName), "r");
+
+		break;
+	}
+	}
 	if(!fp){
 		return;
 	}
 
-	appendToResult(&result, "io.write(\"", &length, &sizeAlloced);
+	appendToResult(&result, "__printx(\"", &length, &sizeAlloced);
 
 	while(!feof(fp)){
 		char c = (char)fgetc(fp);
@@ -53,7 +69,7 @@ void luaHtml_call(lua_State *L, char *fileName){
 		if(c == '\n'){
 			line++;
 		}
-	
+
 		if(c == '<') {
 			charState = 1;
 		} else if(c == '%') {
@@ -76,11 +92,12 @@ void luaHtml_call(lua_State *L, char *fileName){
 					charState = 0;
 				} else {
 					if(state == 1){
-						appendToResult(&result, "; io.write(\"", &length, &sizeAlloced);
+						appendToResult(&result, "; __printx(\"", &length, &sizeAlloced);
 					} else if(state == 2){
-						appendToResult(&result, "); io.write(\"", &length, &sizeAlloced);
+						appendToResult(&result, "); __printx(\"", &length, &sizeAlloced);
 					}
 					state = 0;
+					charState = 0;
 				}
 			} else {
 				charState = 0;
@@ -93,7 +110,7 @@ void luaHtml_call(lua_State *L, char *fileName){
 			} else if(state == 0) {
 				charState = 0;
 				state = 2;
-				appendToResult(&result, "\"); io.write(", &length, &sizeAlloced);
+				appendToResult(&result, "\"); __printx(", &length, &sizeAlloced);
 			}
 		} else {
 			if(charState == 2){
@@ -115,9 +132,8 @@ void luaHtml_call(lua_State *L, char *fileName){
 					fprintf(stderr, "%s", lua_tostring(L, -1));
 					lua_pop(L, 1);
 				}
-
 				length = 0;
-				appendToResult(&result, "io.write(\"", &length, &sizeAlloced);
+				appendToResult(&result, "__printx(\"", &length, &sizeAlloced);
 			} else {
 				appendCharToResult(&result, c, &length, &sizeAlloced);
 			}
@@ -141,7 +157,7 @@ void appendToResult(char **result, char *toAppend, int *length, int *sizeAlloced
 	while(toAppend[pos] != 0){
 		if((*length) >= (*sizeAlloced)-1){
 			*sizeAlloced *= 2;
-			*result = realloc(*result, *sizeAlloced);
+			*result = (char *)realloc(*result, *sizeAlloced);
 			charPtr = (*result)+(*length);
 		}
 		*charPtr = toAppend[pos];
@@ -158,7 +174,7 @@ void appendCharToResult(char **result, char toAppend, int *length, int *sizeAllo
 
 	if((*length) >= (*sizeAlloced)-1){
 		*sizeAlloced *= 2;
-		*result = realloc(*result, *sizeAlloced);
+		*result = (char *)realloc(*result, *sizeAlloced);
 		charPtr = (*result)+(*length);
 	}
 	*charPtr = toAppend;
