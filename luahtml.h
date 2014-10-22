@@ -20,11 +20,12 @@
 * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
-
+#ifndef H_LUAHTML_
+#define H_LUAHTML_
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <lua.h>
+#include <luabind/luabind.hpp>
 #include <lauxlib.h>
 #include <lualib.h>
 #define LUAHTML_MODE_FILE 0
@@ -34,3 +35,4 @@
 void luaHtml_call(lua_State *, char *, int);
 void appendToResult(char **, char *, int *, int *);
 void appendCharToResult(char **, char, int *, int *);
+#endif
